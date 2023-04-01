@@ -14,11 +14,11 @@
   asm volatile ("csrr %0, " #reg : "=r"(__tmp)); \
   __tmp; })
 
-// 100e6 cycles
-#define SLEEP_TIME_US (100000)
+// 100 seconds
+#define SLEEP_TIME_US (100000000)
 
 // How many counters do we support? (change for your micro-architecture).
-#define NUM_COUNTERS (8)
+#define NUM_COUNTERS (7)
 //#define NUM_COUNTERS (32) maximum amount of HPMs is 32
 typedef std::array<long, NUM_COUNTERS> snapshot_t;
 
@@ -66,7 +66,7 @@ static int handle_stats(int enable)
 
    static size_t step = 0; // increment every time handle_stats is called
 
-   int i = 0;         
+   int i = 0;
    snapshot_t snapshot;
 #define READ_CTR(name) do { \
       if (i < NUM_COUNTERS) { \
@@ -86,31 +86,31 @@ static int handle_stats(int enable)
    READ_CTR(hpmcounter4);
    READ_CTR(hpmcounter5);
    READ_CTR(hpmcounter6);
-   READ_CTR(hpmcounter7);
-   READ_CTR(hpmcounter8);
-   READ_CTR(hpmcounter9);
-   READ_CTR(hpmcounter10);
-   READ_CTR(hpmcounter11);
-   READ_CTR(hpmcounter12);
-   READ_CTR(hpmcounter13);
-   READ_CTR(hpmcounter14);
-   READ_CTR(hpmcounter15);
-   READ_CTR(hpmcounter16);
-   READ_CTR(hpmcounter17);
-   READ_CTR(hpmcounter18);
-   READ_CTR(hpmcounter19);
-   READ_CTR(hpmcounter20);
-   READ_CTR(hpmcounter21);
-   READ_CTR(hpmcounter22);
-   READ_CTR(hpmcounter23);
-   READ_CTR(hpmcounter24);
-   READ_CTR(hpmcounter25);
-   READ_CTR(hpmcounter26);
-   READ_CTR(hpmcounter27);
-   READ_CTR(hpmcounter28);
-   READ_CTR(hpmcounter29);
-   READ_CTR(hpmcounter30);
-   READ_CTR(hpmcounter31);
+   // READ_CTR(hpmcounter7);
+   // READ_CTR(hpmcounter8);
+   // READ_CTR(hpmcounter9);
+   // READ_CTR(hpmcounter10);
+   // READ_CTR(hpmcounter11);
+   // READ_CTR(hpmcounter12);
+   // READ_CTR(hpmcounter13);
+   // READ_CTR(hpmcounter14);
+   // READ_CTR(hpmcounter15);
+   // READ_CTR(hpmcounter16);
+   // READ_CTR(hpmcounter17);
+   // READ_CTR(hpmcounter18);
+   // READ_CTR(hpmcounter19);
+   // READ_CTR(hpmcounter20);
+   // READ_CTR(hpmcounter21);
+   // READ_CTR(hpmcounter22);
+   // READ_CTR(hpmcounter23);
+   // READ_CTR(hpmcounter24);
+   // READ_CTR(hpmcounter25);
+   // READ_CTR(hpmcounter26);
+   // READ_CTR(hpmcounter27);
+   // READ_CTR(hpmcounter28);
+   // READ_CTR(hpmcounter29);
+   // READ_CTR(hpmcounter30);
+   // READ_CTR(hpmcounter31);
 
    counters.push_back(snapshot);
 
@@ -120,15 +120,48 @@ static int handle_stats(int enable)
    step++;
 
 #undef READ_CTR
-   if (enable == FINISH || step % 30 == 0) { 
-      for (auto & element : counters) {
+   if (enable == FINISH || step % 30 == 0) {
+      printf("Printing counters: \n");
+      // for (auto & element : counters) {
          for (int i = 0; i < NUM_COUNTERS; i++) {
-            long c = element[i];
+            long c = counters.back()[i];
             if (c) {
-               printf("##  %s = %ld\n", counter_names[i], c);
+               printf("##  %s = %ld", counter_names[i], c);
+               switch(i)
+               {
+                 case 3:
+                  printf(" -- I-cache miss\n");
+                  break;
+                case 4:
+                  printf(" -- D-cache miss\n");
+                  break;
+                case 5:
+                  printf(" -- I-TLB miss\n");
+                  break;
+                case 6:
+                  printf(" -- D-TLB miss\n");
+                  break;
+                case 7:
+                  printf(" -- I-cache busy\n");
+                  break;
+                case 8:
+                  printf(" -- D-cache busy\n");
+                  break;
+                case 9:
+                  printf(" -- Branch directin misprediction\n");
+                  break;
+                case 10:
+                  printf(" -- Branch target misprediction\n");
+                  break;
+                case 11:
+                  printf(" -- Pipeline flushed\n");
+                  break;
+                default:
+                  printf("\n");
+               }
             }
          }
-      }
+      // }
       if (enable != FINISH) counters.clear();
 
       //printf("Print Time in cycles : %ld\n", read_csr_safe(cycle) - tsc_start);
@@ -145,7 +178,7 @@ static int handle_stats(int enable)
 #else
 static int handle_stats(int enable) { return 0; }
 #endif
- 
+
 void sig_handler(int signum)
 {
    handle_stats(FINISH);
